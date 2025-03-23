@@ -53,7 +53,9 @@ pedidosCtrl.createPedido = async (req, res) => { // proceso las peticiones 'post
 
 const {dia, cantidad, producto} = req.body; 
 
-const nuevoPedido = new modeloPedidos ({ //creo un nuevo modelo segun el esquema (schema) que establece 'modeloPedidos'.
+var documentosEnBson2 = await ejecutar(`INSERT INTO pedidos (dia, cantidad, producto) VALUES ("${dia}", "${cantidad}" , "${producto}" ) `);
+
+/* const nuevoPedido = new modeloPedidos ({ //creo un nuevo modelo segun el esquema (schema) que establece 'modeloPedidos'.
 
     dia: dia,
     cantidad: cantidad,
@@ -64,7 +66,7 @@ const nuevoPedido = new modeloPedidos ({ //creo un nuevo modelo segun el esquema
 
 await nuevoPedido.save(); //como nuevoPedido es un modelo de mongoose, utilizo su funcion 'save' para almacenar este nuevo pedido en
 // la base de datos. Al tratarse de la instruccion asincrona de esta "async function", antepondremos el operador 'await' 
-
+ */
 
 var advertencias = await actualizarInsumoPorPedido(cantidad, producto)  //actualizar la cantidad de insumos, 
 //y guardar las advertencias emitidas por escaces o falta de algun insumo.
@@ -335,6 +337,96 @@ actualizarInsumoPorPedido =  async (cantidad, producto) => {  //logica para actu
 
     var info = []// aca guardare la informacion de los insumos faltantes o en escaces
     
+
+    var documentosEnBson = await ejecutar(`SELECT * FROM consumos WHERE producto LIKE "${productoPedido}"`);
+
+    //var documentosEnBson = await modeloConsumos.find({producto: productoPedido } ) //guardo todos los documentos que coinciden con
+    // el producto del pedido (mongoDB los devuelve en formato BSON)
+    // estos documentos son los insumos que consume el producto pedido.
+
+    const dataString = JSON.stringify(documentosEnBson); //convierto de BSON a cadena de texto JSON 
+
+    const insumosYConsumosDelProducto = JSON.parse(dataString); //convierto a objeto JSON
+
+
+    for (let i=0; i < insumosYConsumosDelProducto.length ; i++){  //recorro cada uno de los insumos involucrados en el producto
+    //// Por cada insumo involucrado en el producto pedido, se itera este bucle.
+
+        var insumoABuscar = insumosYConsumosDelProducto[i].insumo 
+
+        var documentosEnBson2 = await ejecutar(`SELECT * FROM insumos WHERE nombre LIKE "${insumoABuscar}"`);
+
+        //var documentosEnBson2 = await modeloInsumos.find({nombre: insumoABuscar } )
+
+        const dataString2 = JSON.stringify(documentosEnBson2); //convierto de BSON a cadena de texto JSON 
+
+        const insumo = JSON.parse(dataString2); //convierto a objeto JSON
+
+        var cantidadStockInsumo = insumo[0].cantidad  // cantidad de insumo en stock
+
+        var insumoConsumido = insumosYConsumosDelProducto[i].consumoPorTachada * tachadasNumber //insumo consumido
+
+        var cantidadInsumoRestante = cantidadStockInsumo - insumoConsumido  // resto la cantidad de insumo consumido
+
+
+        // actualizo la cantidad de insumos en stock
+
+        await ejecutar(`UPDATE insumos SET cantidad = "${cantidadInsumoRestante}" WHERE nombre = "${insumoABuscar}" `);
+
+        
+        //await modeloInsumos.update({nombre: insumoABuscar}, { cantidad: cantidadInsumoRestante });
+        // 1er argumento: localizo el documento de la tabla insumos cuyo nombre sea el del insumo en cuestion,
+        // 2do arg : actualizo el contenido de su campo 'cantidad' con el nuevo valor 'cantidadInsumoRestante'
+
+
+
+        if ( cantidadInsumoRestante < insumo[0].limite ){  //si la nueva cantidad de insumos es menor a la cantidad limite
+
+            if ( cantidadInsumoRestante < 0 ){  //si no queda mas insumo
+
+                info.push('NO HAY MAS ' + (insumo[0].nombre).toUpperCase() + ' !' )
+                //almaceno en el array 'info' un texto informando el faltante del insumo 
+
+            }else{
+
+                info.push('SOLO QUEDAN ' + cantidadInsumoRestante.toString() + ' ' + (insumo[0].unidad).toUpperCase() + ' DE ' +  (insumo[0].nombre).toUpperCase() + ' !' )
+                //almaceno en el array el insumo en escaces con la cantidad en stock
+
+            }
+
+        }
+
+       
+
+    }
+
+    //// Devuelvo informacion de los insumos
+
+    return info
+
+
+
+} 
+
+/* actualizarInsumoPorPedido =  async (cantidad, producto) => {  //logica para actualizar los insumos, segun los pedidos realizados,
+    // y el gasto de insumo de cada producto del pedido.
+    //// Por cada fila de la tabla de pedidos realizados, se ingresa a esta funcion
+
+    var tachadasPedidas = cantidad.substring(0, cantidad.length - 2); ; // tachadas de producto
+
+    var productoPedido = producto.substring(0, producto.length - 2);  //producto pedido.
+    //los string provenientes del frontend vienen con el salto de linea '/n' al final, y debo eliminar estos 2 caracteres con substring(),
+    // para que mongoose pueda encontrar mis documentos.
+
+
+    var tachadasNumber // tachadas pedidas expresadas en numeros
+
+    if (tachadasPedidas == '1 cargada') { tachadasNumber = 3 }
+    if (tachadasPedidas == '1/2 cargada') { tachadasNumber = 1.5 }    
+    if (tachadasPedidas == '1 tachada') { tachadasNumber = 1 }
+
+    var info = []// aca guardare la informacion de los insumos faltantes o en escaces
+    
     var documentosEnBson = await modeloConsumos.find({producto: productoPedido } ) //guardo todos los documentos que coinciden con
     // el producto del pedido (mongoDB los devuelve en formato BSON)
     // estos documentos son los insumos que consume el producto pedido.
@@ -395,7 +487,7 @@ actualizarInsumoPorPedido =  async (cantidad, producto) => {  //logica para actu
 
 
 
-}
+} */
 
 
 // para ejecuciones asincronas de consultas sql a sqlite

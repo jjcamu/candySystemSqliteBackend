@@ -1,19 +1,41 @@
 //el controlador almacena la logica que procesará las peticiones recibidas del cliente, e interactuará con la BBDD a traves del modelo.
 
+const db = require("../database"); // importo la conexion a la base de datos
+
+
 const productosCtrl = {} //creo un objeto, cuyas propiedades seran cada una de las operaciones a realizar en la BBDD
 
-const modeloProductos = require ('../models/productos.js')  //importo el modelo 
 
-const mongoose = require ('mongoose')
 
 //Mostrar productos
-productosCtrl.getProductos = async (req, res) =>{ 
+
+productosCtrl.getProductos = (req, res) =>{ 
+
+
+    db.all(`SELECT * FROM productos ORDER BY nombre `, [], function (err, row) {
+    //devuelve todos los registros de la tabla, ordenados por 'dia' de forma descendente, y si hay mas de un
+    //registro con el mismo dia, los ordena por _id (por orden de guardado) de forma ascendente.
+        try {
+
+            res.json(row) //devuelvo respuesta al cliente. 'row' son los registros devueltos por la consulta.
+
+        } catch (e) {
+            throw e;
+        }
+    })
+
+}
+
+
+
+
+/* productosCtrl.getProductos = async (req, res) =>{ 
 
     const productos = await modeloProductos.find() 
 
     res.json(productos) //devuelvo como respuesta al cliente, los documentos en formato json.
 
-}
+} */
 
 //Crear nuevo producto
 
