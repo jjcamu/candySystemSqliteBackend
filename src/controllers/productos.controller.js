@@ -39,7 +39,24 @@ productosCtrl.getProductos = (req, res) =>{
 
 //Crear nuevo producto
 
-productosCtrl.createProducto = async (req, res) => { // proceso las peticiones 'post' 
+productosCtrl.createProducto = async (req, res) => {// proceso las peticiones 'post' 
+    
+    const {nombre} = req.body; 
+
+        db.all(`INSERT INTO productos (nombre) VALUES ("${nombre}") `, [], function (err, row) {
+ 
+            try {
+
+                res.json({message: 'ok!'})
+    
+            } catch (e) {
+                throw e;
+            }
+        })
+    
+}    
+
+/* productosCtrl.createProducto = async (req, res) => { // proceso las peticiones 'post' 
 
 
     const {nombre} = req.body; 
@@ -56,12 +73,29 @@ productosCtrl.createProducto = async (req, res) => { // proceso las peticiones '
 
     res.json ({message: 'Se ha creado !'}) //devuelvo una respuesta al cliente por consola (en formato json)
 
-}
+} */
 
 //Elimina producto segun su nombre
 
 
 productosCtrl.eliminaProducto =  async (req,res) => {
+
+    var nombreProducto = req.params.parametro;  //datos que recibo desde el front a traves del parametro ingresado por url
+
+    await db.all(`DELETE FROM productos WHERE nombre = "${nombreProducto}"`, [], function (err, row) {
+       //buscar registro cuyo nombre sea 'nombreProducto' y borrarlo.
+            try {
+                res.json({message: 'borrado!'})
+
+
+            } catch (e) {
+                throw e;
+            }
+        })
+    
+    }
+
+/* productosCtrl.eliminaProducto =  async (req,res) => {
 
     var nombreProducto = req.params.parametro;  //datos que recibo desde el front a traves del parametro ingresado por url
 
@@ -71,7 +105,7 @@ productosCtrl.eliminaProducto =  async (req,res) => {
     res.status(204).send('borrado!')//establezco el estado en 204 ,para que no me de error 'net::ERR_EMPTY_RESPONSE' en el método DELETE
 
 
-}
+} */
 
 
 module.exports = productosCtrl ; 

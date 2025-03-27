@@ -53,7 +53,7 @@ pedidosCtrl.createPedido = async (req, res) => { // proceso las peticiones 'post
 
 const {dia, cantidad, producto} = req.body; 
 
-var documentosEnBson2 = await ejecutar(`INSERT INTO pedidos (dia, cantidad, producto) VALUES ("${dia}", "${cantidad}" , "${producto}" ) `);
+await ejecutar(`INSERT INTO pedidos (dia, cantidad, producto) VALUES ("${dia}", "${cantidad}" , "${producto}" ) `);
 
 /* const nuevoPedido = new modeloPedidos ({ //creo un nuevo modelo segun el esquema (schema) que establece 'modeloPedidos'.
 

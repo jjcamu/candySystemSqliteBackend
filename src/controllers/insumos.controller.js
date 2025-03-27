@@ -2,14 +2,32 @@
 
 const insumosCtrl = {} //creo un objeto, cuyas propiedades seran cada una de las operaciones a realizar en la BBDD
 
-const modeloInsumos = require ('../models/insumos.js')  //importo el modelo 
+const db = require("../database"); // importo la conexion a la base de datos
 
 
-
-const mongoose = require ('mongoose')
 
 //Mostrar insumos
-insumosCtrl.getInsumos = async (req, res) =>{ 
+
+insumosCtrl.getInsumos = async (req, res) =>{  
+
+
+    db.all(`SELECT * FROM insumos ORDER BY nombre `, [], function (err, row) {
+    //devuelve todos los registros de la tabla, ordenados por 'nombre' 
+        try {
+
+            res.json(row) //devuelvo respuesta al cliente. 'row' son los registros devueltos por la consulta.
+
+        } catch (e) {
+            throw e;
+        }
+    })
+
+}
+
+
+
+
+/* insumosCtrl.getInsumos = async (req, res) =>{ 
 
 
     const insumos = await modeloInsumos.find({}, null, {sort: {nombre: 1}} )//le pedimos a modeloInsumos, que nos devuelva todos los 
@@ -19,10 +37,27 @@ insumosCtrl.getInsumos = async (req, res) =>{
     res.json(insumos) //devuelvo como respuesta al cliente, los documentos en formato json.
 
 }
-
+ */
 //Crear insumo
 
-insumosCtrl.createInsumo = async (req, res) => { // proceso las peticiones 'post' 
+insumosCtrl.createInsumo = async (req, res) => {// proceso las peticiones 'post' 
+    
+    const{nombre, cantidad, unidad, limite} = req.body;
+
+        db.all(`INSERT INTO insumos (nombre, cantidad, unidad, limite) VALUES ("${nombre}", ${cantidad} , "${unidad}" , ${limite} ) `, [], function (err, row) {
+        //devuelve todos los registros de la tabla, ordenados por 'nombre' 
+            try {
+
+                res.json({message: 'ok!'})
+    
+            } catch (e) {
+                throw e;
+            }
+        })
+    
+}    
+
+/* insumosCtrl.createInsumo = async (req, res) => { // proceso las peticiones 'post' 
 
     const {nombre, cantidad, unidad, limite} = req.body; 
 
@@ -41,11 +76,54 @@ insumosCtrl.createInsumo = async (req, res) => { // proceso las peticiones 'post
 
     res.json ({message: 'Se ha creado !'}) //devuelvo una respuesta al cliente 
 
-}
+} */
 
 // Actualizar insumos
 
 insumosCtrl.updateInsumos = async (req,res) => {
+
+    const {_id, nombre, cantidad, unidad, limite} = req.body; //deconstruyo el contenido del cuerpo de la peticion
+
+    await db.get(`UPDATE insumos SET nombre = "${nombre}" ,
+    cantidad = "${cantidad}" ,
+    unidad = "${unidad}" ,
+    limite = "${limite}" 
+    
+    WHERE _id = "${_id}" `, [], function (err, row) {
+          //actualizar los campos : nombre, cantidad, etc.. de la tabla 'insumos' cuyo campo '_id' sea 'id_'    
+
+            try {
+                res.json({message: 'actualizado!'})
+                //atencion! : por algun extraño motivo, si no devuelvo respuesta , el bucle for del cliente no
+                //seguira iterando...
+
+            } catch (e) {
+                throw e;
+            }
+        })
+    
+    }
+
+
+/* insumosCtrl.updateInsumos = async (req,res) => {
+
+    const {_id, nombre, cantidad, unidad, limite} = req.body; //deconstruyo el contenido del cuerpo de la peticion
+
+
+    console.log(req.body)
+
+    console.log(_id)
+
+    await ejecutar(`UPDATE insumos SET nombre = "${nombre}" ,
+    cantidad = "${cantidad}" ,
+    unidad = "${unidad}" ,
+    limite = "${limite}" 
+    
+    WHERE _id = "${_id}" `);
+
+}
+ */
+/* insumosCtrl.updateInsumos = async (req,res) => {
 
     const {_id, nombre, cantidad, unidad, limite} = req.body; //deconstruyo el contenido del cuerpo de la peticion
 
@@ -65,12 +143,30 @@ insumosCtrl.updateInsumos = async (req,res) => {
     res.json({message: 'actualizado!'})
 
 
-}
+} */
 
 //Elimina insumo segun su _id
 
+insumosCtrl.eliminaInsumo  = async (req,res) => {
 
-insumosCtrl.eliminaInsumo =  async (req,res) => {
+    var _idDelInsumo = req.params.parametro;  //datos que recibo desde el front a traves del parametro ingresado por url
+
+    await db.all(`DELETE FROM insumos WHERE _id = "${_idDelInsumo}"`, [], function (err, row) {
+               //buscar registro cuyo _id sea '_idDelInsumo' y borrarlo.
+
+            try {
+                res.json({message: 'borrado!'})
+                //atencion! : por algun extraño motivo, si no devuelvo respuesta , el bucle for del cliente no
+                //seguira iterando...
+
+            } catch (e) {
+                throw e;
+            }
+        })
+    
+    }
+
+/* insumosCtrl.eliminaInsumo =  async (req,res) => {
 
     var _idDelInsumo = req.params.parametro;  //datos que recibo desde el front a traves del parametro ingresado por url
 
@@ -78,7 +174,7 @@ insumosCtrl.eliminaInsumo =  async (req,res) => {
 
     res.status(204).send('borrado!')//establezco el estado en 204 ,para que no me de error 'net::ERR_EMPTY_RESPONSE' en el método DELETE
 
-}
+} */
 
 
 
